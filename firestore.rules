@@ -1,0 +1,117 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isAdmin() {
+      return isAuthenticated() && (
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
+         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('role', '') == 'admin') ||
+        (request.auth.token.get('email', '') == "adityadake627@gmail.com")
+      );
+    }
+    
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isSystemStaff() {
+      return isAuthenticated() && (
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('role', '') == 'admin_staff'
+      );
+    }
+    
+    function isDriverForOwner() {
+      return isAuthenticated() && 
+             exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'driver' &&
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.ownerId == resource.data.ownerId;
+    }
+
+    function isDriverForCreate() {
+      return isAuthenticated() && 
+             exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'driver' &&
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.ownerId == request.resource.data.ownerId;
+    }
+    
+    function isDocOwner() {
+      return isAuthenticated() && request.auth.uid == resource.data.ownerId;
+    }
+    
+    function isCustomer() {
+      return isAuthenticated() && request.auth.uid == resource.data.customerId;
+    }
+
+    // Users Collection
+    match /users/{userId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && request.auth.uid == userId;
+      allow update: if isOwner(userId) || isAdmin() || isSystemStaff();
+      allow delete: if isAdmin();
+    }
+
+    // Admin Invites
+    match /admin_invites/{inviteId} {
+      allow read: if isAuthenticated();
+      allow create: if isAdmin() || isSystemStaff();
+      allow update: if isAuthenticated();
+    }
+
+    // Machines Collection
+    match /machines/{machineId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && (request.resource.data.ownerId == request.auth.uid || isDriverForCreate());
+      allow update: if isAdmin() || isSystemStaff() || isDocOwner() || isDriverForOwner();
+      allow delete: if isAdmin() || isSystemStaff() || isDocOwner() || isDriverForOwner();
+    }
+
+    // Bookings Collection
+    match /bookings/{bookingId} {
+      allow read: if isAdmin() || isSystemStaff() || isCustomer() || isDocOwner() || isDriverForOwner();
+      allow create: if isAuthenticated() && request.resource.data.customerId == request.auth.uid;
+      allow update: if isAdmin() || isSystemStaff() || isCustomer() || isDocOwner() || isDriverForOwner();
+      allow delete: if isAdmin() || isSystemStaff() || isCustomer() || isDocOwner() || isDriverForOwner();
+    }
+
+    // Khata Collection
+    match /khata/{entryId} {
+      allow read: if isAdmin() || isSystemStaff() || isDocOwner() || isDriverForOwner();
+      allow create: if isAuthenticated() && (request.resource.data.ownerId == request.auth.uid || isDriverForCreate());
+      allow update: if isAdmin() || isSystemStaff() || isDocOwner() || isDriverForOwner();
+      allow delete: if isAdmin() || isSystemStaff() || isDocOwner() || isDriverForOwner();
+    }
+
+    // Staff Collection
+    match /staff/{staffId} {
+      allow read: if isAdmin() || isSystemStaff() || isDocOwner() || isDriverForOwner();
+      allow create: if isAuthenticated() && (request.resource.data.ownerId == request.auth.uid || isDriverForCreate());
+      allow update: if isAdmin() || isSystemStaff() || isDocOwner() || isDriverForOwner() || request.resource.data.status == 'claimed';
+      allow delete: if isAdmin() || isSystemStaff() || isDocOwner() || isDriverForOwner();
+    }
+
+    // Banners Collection
+    match /banners/{bannerId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin() || isSystemStaff();
+    }
+    // Notifications Collection
+    match /notifications/{notificationId} {
+      allow read: if isAuthenticated() && request.auth.uid == resource.data.userId;
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated() && request.auth.uid == resource.data.userId;
+      allow delete: if isAuthenticated() && request.auth.uid == resource.data.userId;
+    }
+    // Settings Collection
+    match /settings/{settingId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+  }
+}

@@ -1,0 +1,112 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "A user of the Agro X platform (customer, owner, or admin).",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "role": { "type": "string", "enum": ["customer", "owner", "admin"] },
+        "name": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "mobile": { "type": "string" },
+        "status": { "type": "string", "enum": ["pending", "active", "rejected"] },
+        "tractorModel": { "type": "string" },
+        "address": { "type": "string" },
+        "businessName": { "type": "string" },
+        "upiId": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "role", "name", "email", "createdAt"]
+    },
+    "Machine": {
+      "title": "Machine",
+      "description": "An agricultural machine listed by an owner.",
+      "type": "object",
+      "properties": {
+        "ownerId": { "type": "string" },
+        "ownerName": { "type": "string" },
+        "businessName": { "type": "string" },
+        "upiId": { "type": "string" },
+        "category": { "type": "string" },
+        "pricingType": { "type": "string", "enum": ["per_hour", "per_acre"] },
+        "price": { "type": "number" },
+        "driverName": { "type": "string" },
+        "driverExperience": { "type": "string" },
+        "isActive": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["ownerId", "category", "pricingType", "price", "isActive", "createdAt"]
+    },
+    "Booking": {
+      "title": "Booking",
+      "description": "A booking request for a machine.",
+      "type": "object",
+      "properties": {
+        "customerId": { "type": "string" },
+        "machineId": { "type": "string" },
+        "ownerId": { "type": "string" },
+        "startDate": { "type": "string", "format": "date-time" },
+        "endDate": { "type": "string", "format": "date-time" },
+        "status": { "type": "string", "enum": ["pending", "confirmed", "completed", "cancelled"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["customerId", "machineId", "ownerId", "startDate", "endDate", "status", "createdAt"]
+    },
+    "KhataEntry": {
+      "title": "KhataEntry",
+      "description": "A ledger entry for an owner's customer.",
+      "type": "object",
+      "properties": {
+        "ownerId": { "type": "string" },
+        "customerName": { "type": "string" },
+        "customerMobile": { "type": "string" },
+        "date": { "type": "string", "format": "date-time" },
+        "workType": { "type": "string" },
+        "quantity": { "type": "number" },
+        "rate": { "type": "number" },
+        "totalAmount": { "type": "number" },
+        "paidAmount": { "type": "number" },
+        "pendingAmount": { "type": "number" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["ownerId", "customerName", "date", "workType", "quantity", "rate", "totalAmount", "paidAmount", "pendingAmount", "createdAt"]
+    },
+    "Notification": {
+      "title": "Notification",
+      "description": "A notification for a user.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "title": { "type": "string" },
+        "message": { "type": "string" },
+        "read": { "type": "boolean" },
+        "bookingId": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "title", "message", "read", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/User" },
+      "description": "Stores user profiles."
+    },
+    "/machines/{machineId}": {
+      "schema": { "$ref": "#/entities/Machine" },
+      "description": "Stores machines listed by owners."
+    },
+    "/bookings/{bookingId}": {
+      "schema": { "$ref": "#/entities/Booking" },
+      "description": "Stores booking requests."
+    },
+    "/khata/{entryId}": {
+      "schema": { "$ref": "#/entities/KhataEntry" },
+      "description": "Stores ledger entries for owners."
+    },
+    "/notifications/{notificationId}": {
+      "schema": { "$ref": "#/entities/Notification" },
+      "description": "Stores notifications for users."
+    }
+  }
+}
